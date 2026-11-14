@@ -1,6 +1,32 @@
 # Init7 TV for Samsung Tizen (QN90AA)
 
-Native Samsung Tizen Smart TV application for **Init7 TV7**, built specifically for the **Samsung QN90AA 55" Neo QLED (Tizen 6.0)**.
+Native Samsung Tizen Smart TV application for **Init7 TV7**, built for **Samsung Tizen Smart TVs (Tizen 6.0+ / QN90AA)**.
+
+## Easiest Way to Sideload onto Your Samsung TV
+
+No Tizen Studio GUI required — you just need **Node.js** on a PC/Mac on the same network as your TV:
+
+1. **Enable Developer Mode on your TV** (one-time setup):
+   - Open **Apps** on your Samsung TV's Smart Hub.
+   - Press **`12345`** on your remote control (use the on-screen number pad if your remote has no number keys).
+   - Turn **Developer Mode** **ON** and enter your PC's local IP address (e.g. `192.168.1.x`).
+   - Hold the TV power button for ~5 seconds to reboot the TV.
+
+2. **Build & install in one command**:
+   ```bash
+   git clone <this-repo-url>
+   cd samsung-init7
+   npm install
+   npm run deploy
+   ```
+   This automatically generates a local Tizen signing certificate, builds `dist/Init7TV.wgt`, discovers your TV on the LAN, installs the app, and launches it.
+   *(If auto-discovery doesn't find your TV, pass its IP explicitly: `npm run deploy -- <YOUR_TV_IP>`.)*
+
+> **Alternative (Pre-built `.wgt` from GitHub Releases):** Download `Init7TV.wgt` from the latest Release (or GitHub Actions artifact) and install it with Tizen `sdb`:
+> ```bash
+> sdb connect <YOUR_TV_IP>:26101
+> sdb install Init7TV.wgt
+> ```
 
 ## Features
 - **Built-in On-TV Multicast Receiver (`Init7TVApp.UdpxyService` on `127.0.0.1:40223`)**:
