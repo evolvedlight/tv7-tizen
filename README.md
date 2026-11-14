@@ -2,6 +2,11 @@
 
 Native Samsung Tizen Smart TV application for **Init7 TV7**, built for **Samsung Tizen Smart TVs (Tizen 6.0+ / QN90AA)**.
 
+<img width="2940" height="1625" alt="image" src="https://github.com/user-attachments/assets/ae02c891-008c-47b5-ac15-6e0543d95daf" />
+
+<img width="2940" height="1655" alt="image" src="https://github.com/user-attachments/assets/95894131-c1a3-43fe-b991-28d21bf79a7a" />
+
+
 ## Easiest Way to Sideload onto Your Samsung TV
 
 No Tizen Studio GUI required — you just need **Node.js** on a PC/Mac on the same network as your TV:
