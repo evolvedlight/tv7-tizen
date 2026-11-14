@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Init7 TV</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Samsung Tizen WebAPIs (present on physical Samsung TV) -->
+    <script type="text/javascript" src="$WEBAPIS/webapis/webapis.js"></script>
+    <!-- Bundled HLS.js for MSE fallback & desktop browser preview -->
+    <script type="text/javascript" src="vendor/hls.min.js"></script>
+</head>
+<body class="avplay-transparent">
+    <!-- NOTE: No <object type="application/avplayer"> tag needed on Tizen 6.0;
+         webapis.avplay uses the hardware video plane directly via setDisplayRect(0,0,1920,1080),
+         avoiding Chromium's centered missing-plugin placeholder box. -->
+
+    <!-- HTML5 / HLS.js Fallback Video Surface -->
+    <video id="html5-player" playsinline></video>
+
+    <!-- Subtle Vignette / Backdrop when UI overlays are open -->
+    <div id="ui-backdrop" class="ui-backdrop visible"></div>
+
+    <!-- Stream Loading / Buffering Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-card">
+            <div class="spinner-ring"></div>
+            <img id="loading-logo" class="loading-logo hidden" alt="">
+            <div id="loading-title" class="loading-title">Tuning Channel...</div>
+            <div id="loading-subtitle" class="loading-subtitle">Connecting to Init7 TV7 stream</div>
+        </div>
+    </div>
+
+    <!-- Stream Error / Retry Overlay -->
+    <div id="error-overlay" class="error-overlay hidden">
+        <div class="error-card">
+            <div class="error-icon">⚠️</div>
+            <div id="error-title" class="error-title">Stream Unavailable</div>
+            <div id="error-message" class="error-message">Could not load the channel stream. Verify your TV is connected to your Init7 network.</div>
+            <div class="error-actions">
+                <button id="btn-error-retry" class="action-pill focused" data-error-action="retry">↻ Retry Stream</button>
+                <button id="btn-error-engine" class="action-pill" data-error-action="switch-engine">⚙️ Switch Player Engine</button>
+                <button id="btn-error-channels" class="action-pill" data-error-action="channels">☰ Choose Another Channel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top-Right Direct Channel Number Entry Overlay -->
+    <div id="numpad-overlay" class="numpad-overlay hidden">
+        <div class="numpad-digits" id="numpad-digits">1</div>
+        <div class="numpad-preview" id="numpad-preview">SRF 1</div>
+    </div>
+
+    <!-- Top-Right Toast Notification -->
+    <div id="toast-banner" class="toast-banner hidden"></div>
+
+    <!-- Left Slide-Out Channel Drawer -->
+    <aside id="channel-drawer" class="channel-drawer open" aria-label="Channel List">
+        <header class="drawer-header">
+            <div class="brand-row">
+                <div class="brand-badge">
+                    <span class="brand-seven">7</span>
+                    <div class="brand-text">
+                        <span class="brand-title">Init7 TV</span>
+                        <span class="brand-sub" id="network-status">On-TV Multicast • 242 Ch</span>
+                    </div>
+                </div>
+                <div class="header-clock" id="drawer-clock">12:00</div>
+            </div>
+
+            <!-- Language, Favorites & Guide Filter Bar -->
+            <nav id="group-tabs" class="group-tabs" aria-label="Channel Groups">
+                <button class="group-tab active" data-group="all">All <span class="tab-count" id="count-all">242</span></button>
+                <button class="group-tab" data-group="fav">★ Favs <span class="tab-count" id="count-fav">0</span></button>
+                <button class="group-tab" data-group="de">DE</button>
+                <button class="group-tab" data-group="fr">FR</button>
+                <button class="group-tab" data-group="it">IT</button>
+                <button class="group-tab" data-group="en">EN</button>
+                <button class="group-tab group-tab-guide" data-group="guide">📅 Guide</button>
+            </nav>
+        </header>
+
+        <!-- Scrollable Channel List -->
+        <div id="channel-list" class="channel-list" role="listbox"></div>
+
+        <footer class="drawer-footer">
+            <span class="key-hint"><kbd>▲▼</kbd> Ch</span>
+            <span class="key-hint"><kbd>◀▶</kbd> Group/Guide</span>
+            <span class="key-hint"><kbd>OK</kbd> Watch</span>
+            <span class="key-hint"><kbd>⏯</kbd> / <kbd>Hold OK</kbd> ★ Fav</span>
+            <span class="key-hint"><kbd>BACK</kbd> Hide</span>
+        </footer>
+    </aside>
+
+    <!-- Bottom On-Screen Display (OSD) Info Banner -->
+    <section id="osd-banner" class="osd-banner visible" aria-label="Now Playing Info">
+        <div class="osd-main">
+            <!-- Channel Identity Column -->
+            <div class="osd-channel-col">
+                <div class="osd-ch-number" id="osd-ch-number">1</div>
+                <div class="osd-logo-wrap">
+                    <img id="osd-ch-logo" class="osd-ch-logo hidden" alt="">
+                    <div id="osd-ch-fallback" class="osd-ch-fallback">TV</div>
+                </div>
+                <div class="osd-ch-meta">
+                    <div class="osd-ch-title-row">
+                        <h1 id="osd-ch-name" class="osd-ch-name">SRF 1</h1>
+                        <span id="osd-fav-star" class="osd-fav-star hidden" title="Favorite">★</span>
+                    </div>
+                    <div class="osd-badges">
+                        <span id="osd-badge-hd" class="badge badge-hd">HD</span>
+                        <span id="osd-badge-lang" class="badge badge-lang">DE</span>
+                        <span id="osd-badge-engine" class="badge badge-engine">On-TV HW</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live EPG Now / Next Column -->
+            <div class="osd-epg-col">
+                <div class="epg-now-row">
+                    <span class="epg-tag epg-tag-now">NOW</span>
+                    <span id="osd-now-time" class="epg-time">--:-- – --:--</span>
+                    <span id="osd-now-title" class="epg-title">Live Broadcast</span>
+                    <span id="osd-now-cat" class="epg-category hidden"></span>
+                </div>
+                <div class="epg-progress-track">
+                    <div id="osd-now-progress" class="epg-progress-fill"></div>
+                </div>
+                <p id="osd-now-desc" class="epg-desc">Direct live stream via Init7 TV7.</p>
+                <div class="epg-next-row">
+                    <span class="epg-tag epg-tag-next">NEXT</span>
+                    <span id="osd-next-time" class="epg-time">--:--</span>
+                    <span id="osd-next-title" class="epg-next-title">—</span>
+                </div>
+            </div>
+
+            <!-- Clock & Stream Stats Column -->
+            <div class="osd-clock-col">
+                <div id="osd-clock" class="osd-clock">12:00</div>
+                <div id="osd-stream-info" class="osd-stream-info">Live</div>
+            </div>
+        </div>
+
+        <!-- Quick Favorites Strip on Main Menu / OSD -->
+        <div id="quick-favs-bar" class="quick-favs-bar">
+            <div class="quick-favs-label">★ Quick Favs</div>
+            <div id="quick-favs-list" class="quick-favs-list"></div>
+        </div>
+
+        <!-- Interactive OSD Action Bar -->
+        <div id="osd-actions" class="osd-actions">
+            <button class="osd-btn" data-action="channels">
+                <span class="osd-btn-icon">☰</span>
+                <span>Channels</span>
+            </button>
+            <button class="osd-btn" data-action="guide">
+                <span class="osd-btn-icon">📅</span>
+                <span>TV Guide</span>
+            </button>
+            <button class="osd-btn" data-action="favorite">
+                <span class="osd-btn-icon" id="osd-action-fav-icon">☆</span>
+                <span id="osd-action-fav-label">Favorite</span>
+            </button>
+            <button class="osd-btn" data-action="audio">
+                <span class="osd-btn-icon">🔊</span>
+                <span id="osd-action-audio-label">Audio</span>
+            </button>
+            <button class="osd-btn" data-action="subtitles">
+                <span class="osd-btn-icon">💬</span>
+                <span id="osd-action-sub-label">Subtitles</span>
+            </button>
+            <button class="osd-btn" data-action="details">
+                <span class="osd-btn-icon">ℹ️</span>
+                <span>Program Info</span>
+            </button>
+            <button class="osd-btn" data-action="udpxy">
+                <span class="osd-btn-icon">📡</span>
+                <span id="osd-action-udpxy-label">Source: On-TV (242 Ch)</span>
+            </button>
+            <button class="osd-btn" data-action="engine">
+                <span class="osd-btn-icon">⚙️</span>
+                <span id="osd-action-engine-label">Engine: Auto</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Full Multi-Channel EPG TV Guide Overlay -->
+    <section id="epg-guide-overlay" class="epg-guide-overlay hidden" aria-label="Full Channel TV Guide">
+        <div class="epg-guide-window">
+            <!-- Top Selected Program Summary & Header -->
+            <header class="guide-top-panel">
+                <div class="guide-selected-info">
+                    <div class="guide-sel-ch-row">
+                        <span id="guide-sel-ch-num" class="guide-sel-ch-num">1</span>
+                        <span id="guide-sel-ch-name" class="guide-sel-ch-name">SRF 1</span>
+                        <span id="guide-sel-time" class="guide-sel-time">--:-- – --:--</span>
+                        <span id="guide-sel-cat" class="epg-category hidden"></span>
+                    </div>
+                    <h2 id="guide-sel-title" class="guide-sel-title">Select a program in the timeline</h2>
+                    <p id="guide-sel-desc" class="guide-sel-desc">Use ▲/▼ to browse channels and ◀/▶ to move across the timeline. Press OK to watch.</p>
+                </div>
+                <div class="guide-header-right">
+                    <div class="guide-title-row">
+                        <span class="brand-seven guide-seven">7</span>
+                        <div>
+                            <div class="guide-main-heading">TV7 Program Guide</div>
+                            <div id="guide-group-label" class="guide-group-label">All Channels</div>
+                        </div>
+                    </div>
+                    <div id="guide-clock" class="guide-clock">12:00</div>
+                </div>
+            </header>
+
+            <!-- Timeline Axis Header -->
+            <div class="guide-timeline-bar">
+                <div id="guide-date-label" class="guide-corner-label">Today</div>
+                <div id="guide-time-slots" class="guide-time-slots"></div>
+            </div>
+
+            <!-- Virtualized Multi-Channel Timeline Grid -->
+            <div id="guide-rows-wrap" class="guide-rows-wrap">
+                <div id="guide-rows-container" class="guide-rows-container"></div>
+                <div id="guide-now-line" class="guide-now-line"></div>
+            </div>
+
+            <!-- Guide Footer Key Hints -->
+            <footer class="guide-footer">
+                <span class="key-hint"><kbd>▲▼</kbd> Channel</span>
+                <span class="key-hint"><kbd>◀▶</kbd> Timeline (–/+ Time)</span>
+                <span class="key-hint"><kbd>CH ∧/∨</kbd> Page Up/Down</span>
+                <span class="key-hint"><kbd>OK</kbd> Watch Channel</span>
+                <span class="key-hint"><kbd>⏯</kbd> / <kbd>Hold OK</kbd> ★ Favorite</span>
+                <span class="key-hint"><kbd>INFO</kbd> Details</span>
+                <span class="key-hint"><kbd>BACK</kbd> Close Guide</span>
+            </footer>
+        </div>
+    </section>
+
+    <!-- Modal Overlay for Audio/Subtitles Track Selection & Full EPG Details -->
+    <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title" class="modal-title">Options</h2>
+                <button id="modal-close-btn" class="modal-close-btn">✕ Back</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script type="text/javascript" src="js/api.js"></script>
+    <script type="text/javascript" src="js/player.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+</body>
+</html>

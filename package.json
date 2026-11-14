@@ -1,0 +1,16 @@
+{
+  "name": "samsung-init7-tv",
+  "version": "1.0.0",
+  "description": "Native Samsung Tizen TV App for Init7 TV7 (QN90AA)",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-wgt.js",
+    "deploy": "node scripts/deploy-tv.js",
+    "discover": "node scripts/discover-tv.js",
+    "wake": "node scripts/wake-tv.js",
+    "serve": "python3 scripts/dev-server.py"
+  },
+  "dependencies": {
+    "@tizentv/webide-common-tizentv": "1.0.20"
+  }
+}

@@ -1,0 +1,1342 @@
+/* ============================================================================
+   Init7 TV — Native Samsung Tizen TV Stylesheet (1920x1080 10-Foot UI)
+   Optimized for 60fps Zero-Lag Scrolling on Samsung QN90AA 55" Neo QLED
+   ============================================================================ */
+
+:root {
+    --bg-panel: rgba(8, 13, 24, 0.96);
+    --bg-panel-heavy: rgba(6, 10, 19, 0.98);
+    --bg-card: rgba(20, 30, 52, 0.85);
+    --bg-card-hover: rgba(28, 48, 84, 0.98);
+    --bg-card-active: rgba(0, 145, 215, 0.28);
+    --accent: #00d4ff;
+    --accent-bright: #4ce3ff;
+    --gold: #ffcc33;
+    --danger: #ff4d6a;
+    --success: #19e68c;
+    --text-primary: #f5f8ff;
+    --text-secondary: #a8b8d8;
+    --text-muted: #6c7f9e;
+    --border-subtle: rgba(255, 255, 255, 0.12);
+    --border-focus: #00d4ff;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    font-family: "SamsungOne", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-primary);
+    /* CRITICAL: Must be transparent so hardware AVPlay video plane shows through */
+    background: transparent !important;
+    position: relative;
+}
+
+/* Native Hardware AVPlay Surface (hidden in DOM so Chromium never draws a missing-plugin box;
+   webapis.avplay.setDisplayRect controls the hardware video plane directly) */
+#av-player {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    visibility: hidden;
+    display: none;
+    pointer-events: none;
+}
+
+/* HTML5 / HLS.js Fallback Surface */
+#html5-player {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1920px;
+    height: 1080px;
+    z-index: 2;
+    object-fit: contain;
+    background: #000;
+    display: none;
+    pointer-events: none;
+}
+
+body.using-html5 #html5-player {
+    display: block;
+}
+
+/* Subtle vignette when UI overlays are open (no GPU blur pass) */
+.ui-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    background: rgba(3, 6, 14, 0.35);
+    display: none;
+    pointer-events: none;
+}
+
+.ui-backdrop.visible {
+    display: block;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================================================
+   Left Slide-Out Channel Drawer (GPU-composited, zero blur overhead)
+   ============================================================================ */
+
+.channel-drawer {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    bottom: 24px;
+    width: 600px;
+    z-index: 20;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+    transform: translate3d(-640px, 0, 0);
+    transition: transform 0.16s ease-out;
+}
+
+.channel-drawer.open {
+    transform: translate3d(0, 0, 0);
+}
+
+.drawer-header {
+    padding: 20px 24px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-seven {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #0099ff;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-title {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.brand-sub {
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.header-clock {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Language / Group Filter Tabs */
+.group-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.group-tab {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    padding: 8px 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.group-tab.active {
+    background: rgba(0, 212, 255, 0.22);
+    color: #fff;
+    border-color: var(--border-focus);
+}
+
+.group-tab-guide {
+    background: rgba(25, 230, 140, 0.14);
+    color: var(--success);
+}
+
+.group-tab-guide.active,
+.group-tab-guide:hover {
+    background: rgba(25, 230, 140, 0.28);
+    color: #fff;
+    border-color: var(--success);
+}
+
+.tab-count {
+    font-size: 12px;
+    opacity: 0.85;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 1px 5px;
+    border-radius: 5px;
+}
+
+/* Scrollable Channel List — Instant scroll, strict layout containment */
+.channel-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    position: relative;
+    contain: strict;
+}
+
+.channel-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.channel-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 3px;
+}
+
+.channel-item {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    margin-bottom: 6px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    cursor: pointer;
+    contain: layout paint style;
+}
+
+.channel-item.playing {
+    background: var(--bg-card-active);
+    border-color: rgba(0, 212, 255, 0.45);
+}
+
+.channel-item.focused {
+    background: var(--bg-card-hover);
+    border-color: var(--border-focus);
+}
+
+.ch-num {
+    width: 42px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.channel-item.playing .ch-num,
+.channel-item.focused .ch-num {
+    color: var(--accent-bright);
+}
+
+.ch-logo-box {
+    width: 64px;
+    height: 44px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.ch-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.ch-logo-fallback {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.ch-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ch-title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ch-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ch-fav {
+    color: var(--gold);
+    font-size: 18px;
+}
+
+.ch-epg-line {
+    font-size: 15px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ch-mini-progress {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 2px;
+}
+
+.ch-mini-progress-bar {
+    height: 100%;
+    background: var(--accent);
+}
+
+.ch-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-hd {
+    background: rgba(0, 212, 255, 0.22);
+    color: var(--accent-bright);
+    border: 1px solid rgba(0, 212, 255, 0.45);
+}
+
+.badge-lang {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text-secondary);
+}
+
+.badge-engine {
+    background: rgba(25, 230, 140, 0.18);
+    color: var(--success);
+    border: 1px solid rgba(25, 230, 140, 0.4);
+}
+
+.drawer-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.key-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+kbd {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.kbd-yellow {
+    color: var(--gold);
+}
+
+.empty-list-msg {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 19px;
+    line-height: 1.5;
+}
+
+/* ============================================================================
+   Bottom On-Screen Display (OSD) Banner
+   ============================================================================ */
+
+.osd-banner {
+    position: fixed;
+    left: 644px;
+    right: 28px;
+    bottom: 24px;
+    z-index: 18;
+    background: var(--bg-panel-heavy);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 22px 28px 18px;
+    will-change: transform;
+    transform: translate3d(0, 130%, 0);
+    transition: transform 0.16s ease-out;
+}
+
+body.drawer-closed .osd-banner {
+    left: 28px;
+}
+
+.osd-banner.visible {
+    transform: translate3d(0, 0, 0);
+}
+
+.osd-main {
+    display: flex;
+    align-items: stretch;
+    gap: 24px;
+}
+
+.osd-channel-col {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-right: 24px;
+    border-right: 1px solid var(--border-subtle);
+    min-width: 330px;
+}
+
+.osd-ch-number {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    min-width: 50px;
+    text-align: center;
+}
+
+.osd-logo-wrap {
+    width: 90px;
+    height: 62px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    flex-shrink: 0;
+}
+
+.osd-ch-logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.osd-ch-fallback {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-secondary);
+}
+
+.osd-ch-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.osd-ch-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.osd-ch-name {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.osd-fav-star {
+    font-size: 24px;
+    color: var(--gold);
+}
+
+.osd-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* EPG Now / Next Column */
+.osd-epg-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+}
+
+.epg-now-row, .epg-next-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.epg-tag {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+.epg-tag-now {
+    background: var(--accent);
+    color: #03101f;
+}
+
+.epg-tag-next {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-secondary);
+}
+
+.epg-time {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--accent-bright);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.epg-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.epg-category {
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.epg-progress-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.epg-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+.epg-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.epg-next-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.osd-clock-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    padding-left: 18px;
+    border-left: 1px solid var(--border-subtle);
+    min-width: 130px;
+}
+
+.osd-clock {
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.osd-stream-info {
+    font-size: 14px;
+    color: var(--success);
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* Quick Favorites Bar on Main OSD Menu */
+.quick-favs-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.quick-favs-label {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+}
+
+.quick-favs-list {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.quick-fav-pill {
+    background: rgba(255, 204, 51, 0.10);
+    border: 2px solid rgba(255, 204, 51, 0.25);
+    border-radius: 9px;
+    color: var(--text-primary);
+    padding: 7px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.quick-fav-pill.playing {
+    background: rgba(0, 145, 215, 0.28);
+    border-color: rgba(0, 212, 255, 0.5);
+}
+
+.quick-fav-pill.focused,
+.quick-fav-pill:hover {
+    background: rgba(0, 212, 255, 0.28);
+    border-color: var(--border-focus);
+    color: #fff;
+}
+
+.quick-fav-num {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--gold);
+}
+
+/* OSD Quick Action Bar */
+.osd-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.osd-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid transparent;
+    border-radius: 9px;
+    color: var(--text-primary);
+    padding: 9px 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.osd-btn:hover,
+.osd-btn.focused {
+    background: rgba(0, 212, 255, 0.25);
+    border-color: var(--border-focus);
+}
+
+.osd-btn-icon {
+    font-size: 18px;
+}
+
+/* ============================================================================
+   Loading, Error, Numpad & Toast Overlays
+   ============================================================================ */
+
+.loading-overlay, .error-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.error-overlay {
+    pointer-events: auto;
+    background: rgba(4, 8, 18, 0.78);
+}
+
+.loading-card, .error-card {
+    background: var(--bg-panel-heavy);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 32px 44px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 660px;
+}
+
+.spinner-ring {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(0, 212, 255, 0.22);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-logo {
+    height: 50px;
+    object-fit: contain;
+}
+
+.loading-title, .error-title {
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.loading-subtitle, .error-message {
+    font-size: 17px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.error-icon {
+    font-size: 44px;
+}
+
+.error-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.action-pill {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 9px;
+    color: #fff;
+    padding: 11px 20px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.action-pill.focused, .action-pill:hover {
+    background: rgba(0, 212, 255, 0.25);
+    border-color: var(--border-focus);
+}
+
+/* Direct Number Pad Overlay */
+.numpad-overlay {
+    position: fixed;
+    top: 32px;
+    right: 36px;
+    z-index: 35;
+    background: var(--bg-panel-heavy);
+    border: 2px solid var(--border-focus);
+    border-radius: 14px;
+    padding: 14px 26px;
+    text-align: right;
+}
+
+.numpad-digits {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.05;
+}
+
+.numpad-preview {
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+/* Toast Notification */
+.toast-banner {
+    position: fixed;
+    top: 32px;
+    right: 36px;
+    z-index: 40;
+    background: var(--bg-panel-heavy);
+    border: 1px solid var(--border-focus);
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* ============================================================================
+   Modal Overlay (Audio/Subtitle Tracks & Full Program Details)
+   ============================================================================ */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    background: rgba(4, 8, 18, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-card {
+    width: 740px;
+    max-height: 800px;
+    background: var(--bg-panel-heavy);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 26px 32px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 16px;
+}
+
+.modal-title {
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.modal-close-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    padding: 8px 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.modal-close-btn.focused, .modal-close-btn:hover {
+    border-color: var(--border-focus);
+    color: #fff;
+}
+
+.modal-body {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.modal-option.selected {
+    background: var(--bg-card-active);
+    border-color: rgba(0, 212, 255, 0.45);
+}
+
+.modal-option.focused, .modal-option:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-focus);
+}
+
+.epg-detail-meta {
+    font-size: 17px;
+    color: var(--accent-bright);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.epg-detail-desc {
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.epg-credits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+/* ============================================================================
+   Full Multi-Channel EPG TV Guide Timeline Grid (1920x1080 10-Foot UI)
+   ============================================================================ */
+
+.epg-guide-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 1920px;
+    height: 1080px;
+    z-index: 25;
+    background: var(--bg-panel-heavy);
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+}
+
+.epg-guide-window {
+    width: 1920px;
+    height: 1080px;
+    background: var(--bg-panel-heavy);
+    border: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.guide-top-panel {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    min-height: 168px;
+    flex-shrink: 0;
+}
+
+.guide-selected-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.guide-sel-ch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.guide-sel-ch-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+    background: rgba(0, 212, 255, 0.16);
+    padding: 2px 10px;
+    border-radius: 6px;
+}
+
+.guide-sel-ch-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.guide-sel-time {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent-bright);
+    font-variant-numeric: tabular-nums;
+}
+
+.guide-sel-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.guide-sel-desc {
+    font-size: 17px;
+    line-height: 1.42;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.guide-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 14px;
+}
+
+.guide-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.guide-seven {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+}
+
+.guide-main-heading {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.guide-group-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.guide-clock {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Timeline Header Row */
+.guide-timeline-bar {
+    display: flex;
+    align-items: center;
+    height: 48px;
+    background: rgba(14, 22, 40, 0.98);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.guide-corner-label {
+    width: 310px;
+    padding: 0 20px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-bright);
+    border-right: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.guide-time-slots {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.guide-time-slot {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Guide Rows Container (8 visible rows for instant 60fps virtualized rendering) */
+.guide-rows-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.guide-rows-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.guide-row {
+    height: 86px;
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    contain: layout paint style;
+}
+
+.guide-row.active-row {
+    background: rgba(0, 212, 255, 0.06);
+}
+
+.guide-ch-cell {
+    width: 310px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-right: 1px solid var(--border-subtle);
+    background: rgba(10, 16, 30, 0.95);
+    flex-shrink: 0;
+}
+
+.guide-row.active-row .guide-ch-cell {
+    background: rgba(18, 34, 62, 0.98);
+    border-right-color: var(--border-focus);
+}
+
+.guide-ch-num {
+    width: 36px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.guide-row.active-row .guide-ch-num {
+    color: var(--accent-bright);
+}
+
+.guide-ch-logo-box {
+    width: 52px;
+    height: 38px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.guide-ch-name-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-ch-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.guide-prog-track {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: rgba(8, 13, 24, 0.65);
+}
+
+.guide-prog-block {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    border-radius: 8px;
+    background: var(--bg-card);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.guide-prog-block.airing-now {
+    background: rgba(0, 145, 215, 0.22);
+    border-color: rgba(0, 212, 255, 0.35);
+}
+
+.guide-prog-block.focused {
+    background: var(--bg-card-hover);
+    border-color: var(--border-focus);
+    z-index: 3;
+}
+
+.guide-prog-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.guide-prog-time {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+.guide-prog-block.focused .guide-prog-time {
+    color: var(--accent-bright);
+}
+
+.guide-now-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--danger);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.guide-now-line::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--danger);
+}
+
+.guide-footer {
+    height: 52px;
+    padding: 0 28px;
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(10, 16, 30, 0.98);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 15px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
