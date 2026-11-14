@@ -22,7 +22,7 @@ No Tizen Studio GUI required — you just need **Node.js** on a PC/Mac on the sa
    This automatically generates a local Tizen signing certificate, builds `dist/Init7TV.wgt`, discovers your TV on the LAN, installs the app, and launches it.
    *(If auto-discovery doesn't find your TV, pass its IP explicitly: `npm run deploy -- <YOUR_TV_IP>`.)*
 
-> **Alternative (Pre-built `.wgt` from GitHub Releases):** Download `Init7TV.wgt` from the latest Release (or GitHub Actions artifact) and install it with Tizen `sdb`:
+> **Alternative (Pre-built `.wgt` from GitHub Releases):** Download [`Init7TV.wgt`](https://github.com/evolvedlight/tv7-tizen/releases/latest/download/Init7TV.wgt) from the [Latest GitHub Release](https://github.com/evolvedlight/tv7-tizen/releases/latest) and install it with Tizen `sdb`:
 > ```bash
 > sdb connect <YOUR_TV_IP>:26101
 > sdb install Init7TV.wgt
